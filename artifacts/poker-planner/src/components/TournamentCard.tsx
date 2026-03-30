@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Clock, Trophy, Zap, Crosshair, Plane, Coins, ChevronDown } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { Star, Clock, Trophy, Zap, Crosshair, Plane, Coins } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Tournament } from "@workspace/api-client-react";
-import { Badge } from "./ui/badge";
+import { format, parseISO } from "date-fns";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -11,103 +11,111 @@ interface TournamentCardProps {
   onToggleSave: () => void;
 }
 
+function getSeriesColor(series: string | undefined) {
+  const s = (series || "").toUpperCase();
+  if (s.includes("WSOP")) return "bg-amber-600";
+  if (s.includes("ORLEANS")) return "bg-rose-600";
+  return "bg-sky-600";
+}
+
+function formatTime12(time: string | undefined): string {
+  if (!time) return "";
+  return time.replace(/\.\s*$/, "").replace(/\.M\./, "M");
+}
+
 export function TournamentCard({ tournament, isSaved, onToggleSave }: TournamentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const seriesUpper = tournament.series?.toUpperCase() || "";
-  const isWsop = seriesUpper.includes("WSOP");
-  const isOrleans = seriesUpper.includes("ORLEANS");
   const hasGuarantee = tournament.guarantee && tournament.guarantee.trim() !== "" && tournament.guarantee !== "N/A";
 
+  let monthDay = "";
+  let dayOfWeek = "";
+  try {
+    const d = parseISO(tournament.date || "");
+    monthDay = format(d, "MMM d");
+    dayOfWeek = format(d, "EEE").toUpperCase();
+  } catch {}
+
+  const timeStr = formatTime12(tournament.time);
+
   const tags = [
-    tournament.isMultiDay && { label: "Multi-Day", icon: Clock, color: "bg-violet-950/40 text-violet-300 border-violet-800/40" },
-    tournament.isTurbo && { label: "Turbo", icon: Zap, color: "bg-red-950/40 text-red-300 border-red-800/40" },
-    tournament.isBounty && { label: "Bounty", icon: Crosshair, color: "bg-emerald-950/40 text-emerald-300 border-emerald-800/40" },
-    tournament.isSatellite && { label: "Satellite", icon: Plane, color: "bg-sky-950/40 text-sky-300 border-sky-800/40" },
-  ].filter(Boolean) as { label: string; icon: typeof Clock; color: string }[];
+    tournament.isMultiDay && { label: "Multi-Day", icon: Clock },
+    tournament.isTurbo && { label: "Turbo", icon: Zap },
+    tournament.isBounty && { label: "Bounty", icon: Crosshair },
+    tournament.isSatellite && { label: "Satellite", icon: Plane },
+  ].filter(Boolean) as { label: string; icon: typeof Clock }[];
 
   return (
-    <motion.div 
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        "relative rounded-2xl overflow-hidden",
-        "bg-card/90 backdrop-blur-sm",
-        "border transition-all duration-200",
-        isSaved ? "border-primary/30 shadow-[0_0_20px_-5px_rgba(212,175,55,0.15)]" : "border-border/60 hover:border-border",
-      )}
-    >
-      <div 
-        className="p-4 cursor-pointer active:bg-white/[0.02] transition-colors"
+    <div className="border-b border-border/40 last:border-b-0">
+      <div
+        className="flex cursor-pointer active:bg-white/[0.02] transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                isWsop 
-                  ? "bg-amber-900/40 text-amber-300 border border-amber-700/30" 
-                  : isOrleans
-                    ? "bg-rose-900/40 text-rose-300 border border-rose-700/30"
-                    : "bg-sky-900/40 text-sky-300 border border-sky-700/30"
-              )}>
-                {tournament.series}{tournament.eventNumber ? ` #${tournament.eventNumber}` : ""}
-              </span>
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {tournament.time}
-              </span>
-            </div>
-            
-            <h3 className="text-sm font-bold text-foreground leading-snug mb-2 line-clamp-2 font-sans">
-              {tournament.event}
-            </h3>
+        <div className={cn(
+          "w-[72px] shrink-0 flex flex-col items-center justify-center py-3 px-1 border-r border-border/30",
+          getSeriesColor(tournament.series),
+          "bg-opacity-15"
+        )}>
+          <span className="text-[11px] font-bold text-foreground/90 leading-tight">{monthDay}</span>
+          <span className="text-[10px] font-bold text-primary tracking-wider">{dayOfWeek}</span>
+          <span className="text-[10px] text-muted-foreground mt-0.5 leading-tight text-center">{timeStr}</span>
+        </div>
 
-            <div className="flex items-baseline gap-3">
-              <span className="text-base font-bold text-primary font-display">
-                {tournament.entry || "N/A"}
-              </span>
-              {hasGuarantee && (
-                <span className="text-xs text-muted-foreground">
-                  GTD <span className="text-gradient-gold font-semibold">{tournament.guarantee}</span>
+        <div className="flex-1 min-w-0 py-3 px-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[13px] font-bold text-foreground leading-snug font-sans line-clamp-2">
+                {tournament.eventNumber ? `#${tournament.eventNumber}: ` : ""}
+                {tournament.event}
+              </h3>
+
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                <span>
+                  Buy-In <span className="text-foreground font-semibold">{tournament.entry || "N/A"}</span>
                 </span>
+                {hasGuarantee && (
+                  <span>
+                    Prize <span className="text-gradient-gold font-semibold">{tournament.guarantee}</span>
+                  </span>
+                )}
+              </div>
+
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {tags.map(tag => (
+                    <span key={tag.label} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-secondary/60 text-muted-foreground">
+                      <tag.icon className="w-2.5 h-2.5" />
+                      {tag.label}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
 
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {tags.map(tag => (
-                  <span key={tag.label} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", tag.color)}>
-                    <tag.icon className="w-2.5 h-2.5" />
-                    {tag.label}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col items-center gap-2 shrink-0">
-            <motion.button
-              whileTap={{ scale: 0.85 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleSave();
-              }}
-              className={cn(
-                "p-2.5 rounded-xl border transition-all duration-200",
-                isSaved 
-                  ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_12px_-2px_rgba(212,175,55,0.3)]" 
-                  : "bg-card border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
-              )}
-            >
-              <Star className={cn("w-5 h-5 transition-all", isSaved ? "fill-primary" : "")} />
-            </motion.button>
-            <ChevronDown className={cn(
-              "w-4 h-4 text-muted-foreground transition-transform duration-200",
-              isExpanded && "rotate-180"
-            )} />
+            <div className="flex items-center gap-2 shrink-0 pt-0.5">
+              <span className={cn(
+                "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded",
+                getSeriesColor(tournament.series),
+                "bg-opacity-20 text-foreground/80"
+              )}>
+                {tournament.series}
+              </span>
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSave();
+                }}
+                className={cn(
+                  "p-1.5 rounded-lg transition-all duration-200",
+                  isSaved
+                    ? "text-primary"
+                    : "text-muted-foreground/40 hover:text-muted-foreground"
+                )}
+              >
+                <Star className={cn("w-5 h-5", isSaved ? "fill-primary" : "")} />
+              </motion.button>
+            </div>
           </div>
         </div>
       </div>
@@ -121,34 +129,33 @@ export function TournamentCard({ tournament, isSaved, onToggleSave }: Tournament
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-1 border-t border-border/30">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <DetailItem icon={Coins} label="Starting Chips" value={tournament.chips || "N/A"} />
-                <DetailItem icon={Trophy} label="Levels" value={tournament.levels || "N/A"} />
-                <DetailItem icon={Clock} label="Late Reg" value={tournament.lateReg || tournament.endOfReg || "N/A"} />
-                <DetailItem icon={Clock} label="Game" value={tournament.gameType || "N/A"} />
+            <div className="pl-[72px] pr-4 pb-3">
+              <div className="border-t border-border/20 pt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <DetailRow label="Starting Chips" value={tournament.chips || "N/A"} />
+                  <DetailRow label="Levels" value={tournament.levels || "N/A"} />
+                  <DetailRow label="Late Reg" value={tournament.lateReg || tournament.endOfReg || "N/A"} />
+                  <DetailRow label="Game Type" value={tournament.gameType || "N/A"} />
+                </div>
+                {tournament.format && (
+                  <p className="mt-2 text-[11px] text-muted-foreground/70 leading-relaxed">
+                    {tournament.format}
+                  </p>
+                )}
               </div>
-              {tournament.format && (
-                <p className="mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground leading-relaxed">
-                  {tournament.format}
-                </p>
-              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 
-function DetailItem({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: string }) {
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
-        <Icon className="w-3 h-3" />
-        {label}
-      </div>
-      <p className="font-semibold text-xs text-foreground/90">{value}</p>
+    <div className="text-[11px]">
+      <span className="text-muted-foreground">{label}: </span>
+      <span className="text-foreground/80 font-medium">{value}</span>
     </div>
   );
 }
