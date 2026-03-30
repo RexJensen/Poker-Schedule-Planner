@@ -1,15 +1,16 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Poker Tournament Planner API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: tournaments
+    description: Tournament schedule and planning
 paths:
   /healthz:
     get:
@@ -24,6 +25,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /tournaments:
+    get:
+      operationId: getTournaments
+      tags: [tournaments]
+      summary: Get all tournaments
+      description: Returns all tournaments from all series, optionally filtered
+      parameters:
+        - name: series
+          in: query
+          schema:
+            type: string
+          description: Filter by series (e.g. WSOP, Wynn)
+        - name: date
+          in: query
+          schema:
+            type: string
+          description: Filter by date (YYYY-MM-DD)
+        - name: minEntry
+          in: query
+          schema:
+            type: number
+          description: Minimum entry fee
+        - name: maxEntry
+          in: query
+          schema:
+            type: number
+          description: Maximum entry fee
+      responses:
+        "200":
+          description: List of tournaments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tournament"
+  /tournaments/my-list:
+    get:
+      operationId: getMyList
+      tags: [tournaments]
+      summary: Get user's saved tournament list
+      responses:
+        "200":
+          description: List of saved tournament IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    put:
+      operationId: updateMyList
+      tags: [tournaments]
+      summary: Update user's saved tournament list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MyListUpdate"
+      responses:
+        "200":
+          description: Updated list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
 components:
   schemas:
     HealthStatus:
@@ -33,4 +103,76 @@ components:
           type: string
       required:
         - status
-
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: string
+        series:
+          type: string
+        date:
+          type: string
+        day:
+          type: string
+        time:
+          type: string
+        event:
+          type: string
+        guarantee:
+          type: string
+          nullable: true
+        entry:
+          type: string
+          nullable: true
+        entryAmount:
+          type: number
+          nullable: true
+        chips:
+          type: string
+          nullable: true
+        levels:
+          type: string
+          nullable: true
+        endOfReg:
+          type: string
+          nullable: true
+        eventNumber:
+          type: string
+          nullable: true
+        format:
+          type: string
+          nullable: true
+        lateReg:
+          type: string
+          nullable: true
+        gameType:
+          type: string
+        isMultiDay:
+          type: boolean
+        isTurbo:
+          type: boolean
+        isBounty:
+          type: boolean
+        isSatellite:
+          type: boolean
+      required:
+        - id
+        - series
+        - date
+        - day
+        - time
+        - event
+        - gameType
+        - isMultiDay
+        - isTurbo
+        - isBounty
+        - isSatellite
+    MyListUpdate:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+      required:
+        - ids

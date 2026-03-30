@@ -1,0 +1,13 @@
+packages:
+  "framer-motion": "For smooth card expansions, list animations, and page transitions"
+  "date-fns": "For formatting and grouping tournament dates"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes without conflicts"
+  "lucide-react": "For beautiful crisp iconography"
+images:
+  - path: "artifacts/poker-planner/public/images/casino-bg.png"
+    description: "Dark, moody, subtle casino green felt texture, premium minimal lighting, out of focus dark poker table background"
+    aspect_ratio: "16:9"
+notes:
+  - Expects @workspace/api-client-react to export useGetTournaments, useGetMyList, useUpdateMyList, and related types.
+  - The UI runs in a forced dark mode to simulate a high-end poker room aesthetic.

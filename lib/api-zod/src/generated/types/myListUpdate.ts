@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from "./getTournamentsParams";
-export * from "./healthStatus";
-export * from "./myListUpdate";
-export * from "./tournament";
+export interface MyListUpdate {
+  ids: string[];
+}

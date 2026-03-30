@@ -5,9 +5,6 @@
  * Poker Tournament Planner API
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
 
 export interface Tournament {
   id: string;
@@ -31,26 +28,3 @@ export interface Tournament {
   isBounty: boolean;
   isSatellite: boolean;
 }
-
-export interface MyListUpdate {
-  ids: string[];
-}
-
-export type GetTournamentsParams = {
-  /**
-   * Filter by series (e.g. WSOP, Wynn)
-   */
-  series?: string;
-  /**
-   * Filter by date (YYYY-MM-DD)
-   */
-  date?: string;
-  /**
-   * Minimum entry fee
-   */
-  minEntry?: number;
-  /**
-   * Maximum entry fee
-   */
-  maxEntry?: number;
-};
