@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="screenshots/schedule-view.jpg" alt="Schedule View" width="280" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="screenshots/my-list-view.jpg" alt="My List View" width="280" />
-</p>
-
 <h1 align="center">Poker Tournament Planner</h1>
 
 <p align="center">

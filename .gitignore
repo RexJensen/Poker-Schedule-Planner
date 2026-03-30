@@ -49,6 +49,10 @@ skills-lock.json
 .agents/
 attached_assets/
 
+# Internal tooling
+artifacts/mockup-sandbox/
+screenshots/
+
 # Environment
 .env
 .env.local
