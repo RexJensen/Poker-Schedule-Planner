@@ -7,17 +7,17 @@ import {
   getGetMyListQueryKey 
 } from "@workspace/api-client-react";
 
-export type BuyinRange = "Under $1,500" | "$1,500-$4,999" | "$5K-$9,999" | "$10K-$99,999" | "$100K+";
+export type BuyinRange = "$1,500 & Under" | "$1,500-$5,000" | "$5,000-$10,000" | "$10K-$99K" | "$100K+";
 
 export const BUYIN_RANGE_BOUNDS: Record<BuyinRange, [number | null, number | null]> = {
-  "Under $1,500": [null, 1499],
-  "$1,500-$4,999": [1500, 4999],
-  "$5K-$9,999": [5000, 9999],
-  "$10K-$99,999": [10000, 99999],
+  "$1,500 & Under": [null, 1500],
+  "$1,500-$5,000": [1500, 5000],
+  "$5,000-$10,000": [5000, 10000],
+  "$10K-$99K": [10000, 99999],
   "$100K+": [100000, null],
 };
 
-export const BUYIN_RANGE_OPTIONS: BuyinRange[] = ["Under $1,500", "$1,500-$4,999", "$5K-$9,999", "$10K-$99,999", "$100K+"];
+export const BUYIN_RANGE_OPTIONS: BuyinRange[] = ["$1,500 & Under", "$1,500-$5,000", "$5,000-$10,000", "$10K-$99K", "$100K+"];
 
 export interface CustomBuyinRange {
   min: number | null;
