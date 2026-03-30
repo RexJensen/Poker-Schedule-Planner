@@ -113,7 +113,7 @@ export function FilterBar({
                     Series
                   </label>
                   <div className="flex flex-wrap gap-1.5">
-                    {["All", "WSOP", "Wynn"].map(s => (
+                    {["All", "WSOP", "Wynn", "Orleans"].map(s => (
                       <FilterChip key={s} label={s} active={seriesFilter === s} onClick={() => setSeriesFilter(s)} />
                     ))}
                   </div>

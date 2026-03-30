@@ -14,7 +14,9 @@ interface TournamentCardProps {
 export function TournamentCard({ tournament, isSaved, onToggleSave }: TournamentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const isWsop = tournament.series?.toUpperCase().includes("WSOP");
+  const seriesUpper = tournament.series?.toUpperCase() || "";
+  const isWsop = seriesUpper.includes("WSOP");
+  const isOrleans = seriesUpper.includes("ORLEANS");
   const hasGuarantee = tournament.guarantee && tournament.guarantee.trim() !== "" && tournament.guarantee !== "N/A";
 
   const tags = [
@@ -47,7 +49,9 @@ export function TournamentCard({ tournament, isSaved, onToggleSave }: Tournament
                 "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
                 isWsop 
                   ? "bg-amber-900/40 text-amber-300 border border-amber-700/30" 
-                  : "bg-sky-900/40 text-sky-300 border border-sky-700/30"
+                  : isOrleans
+                    ? "bg-rose-900/40 text-rose-300 border border-rose-700/30"
+                    : "bg-sky-900/40 text-sky-300 border border-sky-700/30"
               )}>
                 {tournament.series}{tournament.eventNumber ? ` #${tournament.eventNumber}` : ""}
               </span>

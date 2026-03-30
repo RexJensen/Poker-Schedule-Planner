@@ -3,10 +3,11 @@ import { db, myListTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { wynnTournaments } from "../data/wynn.js";
 import { wsopTournaments } from "../data/wsop.js";
+import { orleansTournaments } from "../data/orleans.js";
 
 const router: IRouter = Router();
 
-const allTournaments = [...wynnTournaments, ...wsopTournaments].sort((a, b) => {
+const allTournaments = [...wynnTournaments, ...wsopTournaments, ...orleansTournaments].sort((a, b) => {
   if (a.date !== b.date) return a.date.localeCompare(b.date);
   return a.time.localeCompare(b.time);
 });
