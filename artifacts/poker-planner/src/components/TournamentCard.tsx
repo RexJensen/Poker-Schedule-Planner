@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, Clock, Trophy, Zap, Crosshair, Plane, Coins, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Star, Clock, Trophy, Zap, Crosshair, Plane, Coins, ChevronDown } from "lucide-react";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Tournament } from "@workspace/api-client-react";
 import { Badge } from "./ui/badge";
 
@@ -14,144 +14,137 @@ interface TournamentCardProps {
 export function TournamentCard({ tournament, isSaved, onToggleSave }: TournamentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const seriesVariant = tournament.series?.toUpperCase().includes("WSOP") ? "wsop" : "wynn";
+  const isWsop = tournament.series?.toUpperCase().includes("WSOP");
   const hasGuarantee = tournament.guarantee && tournament.guarantee.trim() !== "" && tournament.guarantee !== "N/A";
+
+  const tags = [
+    tournament.isMultiDay && { label: "Multi-Day", icon: Clock, color: "bg-violet-950/40 text-violet-300 border-violet-800/40" },
+    tournament.isTurbo && { label: "Turbo", icon: Zap, color: "bg-red-950/40 text-red-300 border-red-800/40" },
+    tournament.isBounty && { label: "Bounty", icon: Crosshair, color: "bg-emerald-950/40 text-emerald-300 border-emerald-800/40" },
+    tournament.isSatellite && { label: "Satellite", icon: Plane, color: "bg-sky-950/40 text-sky-300 border-sky-800/40" },
+  ].filter(Boolean) as { label: string; icon: typeof Clock; color: string }[];
 
   return (
     <motion.div 
       layout
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        "relative rounded-2xl overflow-hidden cursor-pointer",
-        "bg-gradient-to-b from-card to-card/80",
-        "border transition-all duration-300 shadow-lg",
-        isExpanded ? "border-primary/40 shadow-primary/10" : "border-border hover:border-primary/20",
-        isSaved && !isExpanded ? "border-primary/30" : ""
+        "relative rounded-2xl overflow-hidden",
+        "bg-card/90 backdrop-blur-sm",
+        "border transition-all duration-200",
+        isSaved ? "border-primary/30 shadow-[0_0_20px_-5px_rgba(212,175,55,0.15)]" : "border-border/60 hover:border-border",
       )}
-      onClick={() => setIsExpanded(!isExpanded)}
     >
-      {/* Glow effect when saved */}
-      {isSaved && (
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-transparent to-primary/5 blur-xl -z-10 pointer-events-none" />
-      )}
-
-      <div className="p-4 relative z-10">
-        <div className="flex justify-between items-start gap-3">
+      <div 
+        className="p-4 cursor-pointer active:bg-white/[0.02] transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <Badge variant={seriesVariant} className="uppercase tracking-wider font-display text-[10px]">
-                {tournament.series} {tournament.eventNumber && `#${tournament.eventNumber}`}
-              </Badge>
-              <div className="flex items-center text-muted-foreground text-xs font-medium">
-                <Clock className="w-3.5 h-3.5 mr-1 text-primary" />
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className={cn(
+                "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
+                isWsop 
+                  ? "bg-amber-900/40 text-amber-300 border border-amber-700/30" 
+                  : "bg-sky-900/40 text-sky-300 border border-sky-700/30"
+              )}>
+                {tournament.series}{tournament.eventNumber ? ` #${tournament.eventNumber}` : ""}
+              </span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" />
                 {tournament.time}
-              </div>
+              </span>
             </div>
             
-            <h3 className="text-base sm:text-lg font-bold text-foreground leading-tight line-clamp-2">
+            <h3 className="text-sm font-bold text-foreground leading-snug mb-2 line-clamp-2 font-sans">
               {tournament.event}
             </h3>
 
-            <div className="mt-3 flex items-end gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-0.5">Buy-in</p>
-                <p className="text-lg font-display text-primary font-bold">
-                  {tournament.entry || "N/A"}
-                </p>
-              </div>
-              
+            <div className="flex items-baseline gap-3">
+              <span className="text-base font-bold text-primary font-display">
+                {tournament.entry || "N/A"}
+              </span>
               {hasGuarantee && (
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-0.5">Guarantee</p>
-                  <p className="text-lg font-display text-gradient-gold font-bold">
-                    {tournament.guarantee}
-                  </p>
-                </div>
+                <span className="text-xs text-muted-foreground">
+                  GTD <span className="text-gradient-gold font-semibold">{tournament.guarantee}</span>
+                </span>
               )}
             </div>
+
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {tags.map(tag => (
+                  <span key={tag.label} className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", tag.color)}>
+                    <tag.icon className="w-2.5 h-2.5" />
+                    {tag.label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSave();
-            }}
-            className={cn(
-              "shrink-0 p-3 rounded-xl border backdrop-blur-md transition-all duration-300",
-              isSaved 
-                ? "bg-primary/20 border-primary shadow-[0_0_15px_rgba(212,175,55,0.3)] text-primary" 
-                : "bg-background/50 border-border text-muted-foreground hover:bg-secondary hover:text-foreground hover:border-muted-foreground/30"
-            )}
-          >
-            <Star className={cn("w-6 h-6 transition-all", isSaved ? "fill-primary" : "")} />
-          </button>
-        </div>
-
-        {/* Badges row for compact view */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {tournament.isMultiDay && <Badge variant="secondary"><Clock className="w-3 h-3 mr-1"/> Multi-Day</Badge>}
-          {tournament.isTurbo && <Badge variant="secondary" className="bg-red-950/30 text-red-400 border-red-900/50"><Zap className="w-3 h-3 mr-1"/> Turbo</Badge>}
-          {tournament.isBounty && <Badge variant="secondary" className="bg-emerald-950/30 text-emerald-400 border-emerald-900/50"><Crosshair className="w-3 h-3 mr-1"/> Bounty</Badge>}
-          {tournament.isSatellite && <Badge variant="secondary" className="bg-blue-950/30 text-blue-400 border-blue-900/50"><Plane className="w-3 h-3 mr-1"/> Satellite</Badge>}
+          <div className="flex flex-col items-center gap-2 shrink-0">
+            <motion.button
+              whileTap={{ scale: 0.85 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSave();
+              }}
+              className={cn(
+                "p-2.5 rounded-xl border transition-all duration-200",
+                isSaved 
+                  ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_12px_-2px_rgba(212,175,55,0.3)]" 
+                  : "bg-card border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
+              )}
+            >
+              <Star className={cn("w-5 h-5 transition-all", isSaved ? "fill-primary" : "")} />
+            </motion.button>
+            <ChevronDown className={cn(
+              "w-4 h-4 text-muted-foreground transition-transform duration-200",
+              isExpanded && "rotate-180"
+            )} />
+          </div>
         </div>
       </div>
 
-      {/* Expanded Details */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden bg-background/50 border-t border-border/50"
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
-            <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Coins className="w-3 h-3 mr-1.5" />
-                  Starting Chips
-                </div>
-                <p className="font-semibold text-sm">{tournament.chips || "N/A"}</p>
+            <div className="px-4 pb-4 pt-1 border-t border-border/30">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <DetailItem icon={Coins} label="Starting Chips" value={tournament.chips || "N/A"} />
+                <DetailItem icon={Trophy} label="Levels" value={tournament.levels || "N/A"} />
+                <DetailItem icon={Clock} label="Late Reg" value={tournament.lateReg || tournament.endOfReg || "N/A"} />
+                <DetailItem icon={Clock} label="Game" value={tournament.gameType || "N/A"} />
               </div>
-              
-              <div className="space-y-1">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Trophy className="w-3 h-3 mr-1.5" />
-                  Levels
-                </div>
-                <p className="font-semibold text-sm">{tournament.levels || "N/A"}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3 mr-1.5" />
-                  Late Reg
-                </div>
-                <p className="font-semibold text-sm">{tournament.lateReg || tournament.endOfReg || "N/A"}</p>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <Info className="w-3 h-3 mr-1.5" />
-                  Game Type
-                </div>
-                <p className="font-semibold text-sm">{tournament.gameType || "N/A"}</p>
-              </div>
-              
               {tournament.format && (
-                <div className="col-span-2 sm:col-span-4 space-y-1 mt-2 pt-2 border-t border-border/30">
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    Format Details
-                  </div>
-                  <p className="font-medium text-sm text-foreground/80">{tournament.format}</p>
-                </div>
+                <p className="mt-3 pt-3 border-t border-border/30 text-xs text-muted-foreground leading-relaxed">
+                  {tournament.format}
+                </p>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+function DetailItem({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">
+        <Icon className="w-3 h-3" />
+        {label}
+      </div>
+      <p className="font-semibold text-xs text-foreground/90">{value}</p>
+    </div>
   );
 }

@@ -91,6 +91,17 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `artifacts/poker-planner` (`@workspace/poker-planner`)
+
+Mobile-first React+Vite poker tournament schedule planner for summer 2026 Las Vegas tournaments. Dark casino aesthetic with gold accents.
+
+- **Features**: Browse WSOP & Wynn Summer Classic schedules (280+ tournaments), filter by series/game type/buy-in range, search by event name, star tournaments to "My List", budget tracking
+- **Filters**: Series (All/WSOP/Wynn), Game Type (All/NLH/PLO/Mixed), Buy-in (Under $500 / $500-$1K / $1K-$5K / $5K-$10K / $10K+)
+- **Data**: Static tournament data in `artifacts/api-server/src/data/wynn.ts` and `wsop.ts`; user's saved list persisted in `my_list` PostgreSQL table
+- **API routes**: `GET /api/tournaments`, `GET /api/tournaments/my-list`, `PUT /api/tournaments/my-list`
+- **Key components**: `FilterBar.tsx`, `TournamentCard.tsx`, `BottomNav.tsx`, pages `Schedule.tsx` & `MyList.tsx`
+- **Hooks**: `use-tournaments-data.ts` — central state management for filters, saved list, budget stats
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.

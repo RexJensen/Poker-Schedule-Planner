@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetTournaments, 
@@ -6,16 +6,24 @@ import {
   useUpdateMyList,
   getGetMyListQueryKey 
 } from "@workspace/api-client-react";
-import type { Tournament } from "@workspace/api-client-react";
+
+export type BuyinRange = "All" | "Under $500" | "$500-$1K" | "$1K-$5K" | "$5K-$10K" | "$10K+";
+
+const BUYIN_RANGES: Record<BuyinRange, [number | null, number | null]> = {
+  "All": [null, null],
+  "Under $500": [null, 499],
+  "$500-$1K": [500, 1000],
+  "$1K-$5K": [1001, 5000],
+  "$5K-$10K": [5001, 10000],
+  "$10K+": [10001, null],
+};
 
 export function useTournamentsData() {
   const queryClient = useQueryClient();
   
-  // Data Fetching
   const { data: tournaments = [], isLoading: isLoadingTournaments } = useGetTournaments();
   const { data: myListIds = [], isLoading: isLoadingList } = useGetMyList();
   
-  // Mutations
   const updateListMutation = useUpdateMyList({
     mutation: {
       onMutate: async ({ data }) => {
@@ -24,7 +32,7 @@ export function useTournamentsData() {
         queryClient.setQueryData<string[]>(getGetMyListQueryKey(), data.ids);
         return { previousList };
       },
-      onError: (err, variables, context) => {
+      onError: (_err, _variables, context) => {
         if (context?.previousList) {
           queryClient.setQueryData(getGetMyListQueryKey(), context.previousList);
         }
@@ -35,30 +43,57 @@ export function useTournamentsData() {
     }
   });
 
-  const toggleSaved = (id: string) => {
+  const toggleSaved = useCallback((id: string) => {
     const isCurrentlySaved = myListIds.includes(id);
     const newIds = isCurrentlySaved 
       ? myListIds.filter(savedId => savedId !== id)
       : [...myListIds, id];
       
     updateListMutation.mutate({ data: { ids: newIds } });
-  };
+  }, [myListIds, updateListMutation]);
 
-  // Local Filter State
   const [search, setSearch] = useState("");
   const [seriesFilter, setSeriesFilter] = useState<string>("All");
   const [gameFilter, setGameFilter] = useState<string>("All");
+  const [buyinFilter, setBuyinFilter] = useState<BuyinRange>("All");
 
-  // Derived filtered data
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (seriesFilter !== "All") count++;
+    if (gameFilter !== "All") count++;
+    if (buyinFilter !== "All") count++;
+    return count;
+  }, [seriesFilter, gameFilter, buyinFilter]);
+
+  const clearAllFilters = useCallback(() => {
+    setSeriesFilter("All");
+    setGameFilter("All");
+    setBuyinFilter("All");
+    setSearch("");
+  }, []);
+
   const filteredTournaments = useMemo(() => {
     return tournaments.filter(t => {
       if (seriesFilter !== "All" && t.series !== seriesFilter) return false;
       
       if (gameFilter !== "All") {
-        const type = t.gameType?.toUpperCase() || "";
-        if (gameFilter === "NLH" && !type.includes("NO-LIMIT HOLD'EM") && !type.includes("NLH")) return false;
-        if (gameFilter === "PLO" && !type.includes("OMAHA") && !type.includes("PLO")) return false;
-        if (gameFilter === "Mixed" && !type.includes("HORSE") && !type.includes("MIX") && !type.includes("8-GAME")) return false;
+        const type = (t.gameType || "").toUpperCase();
+        const event = (t.event || "").toUpperCase();
+        if (gameFilter === "NLH") {
+          if (!type.includes("NO-LIMIT HOLD") && !type.includes("NLH") && !event.includes("NLH") && !event.includes("NO-LIMIT HOLD")) return false;
+        } else if (gameFilter === "PLO") {
+          if (!type.includes("OMAHA") && !type.includes("PLO") && !event.includes("OMAHA") && !event.includes("PLO")) return false;
+        } else if (gameFilter === "Mixed") {
+          if (!type.includes("HORSE") && !type.includes("MIX") && !type.includes("8-GAME") && !event.includes("HORSE") && !event.includes("MIX") && !event.includes("8-GAME") && !event.includes("DEALER")) return false;
+        }
+      }
+
+      if (buyinFilter !== "All") {
+        const [min, max] = BUYIN_RANGES[buyinFilter];
+        const amount = t.entryAmount;
+        if (amount == null) return false;
+        if (min !== null && amount < min) return false;
+        if (max !== null && amount > max) return false;
       }
 
       if (search) {
@@ -71,22 +106,18 @@ export function useTournamentsData() {
 
       return true;
     });
-  }, [tournaments, search, seriesFilter, gameFilter]);
+  }, [tournaments, search, seriesFilter, gameFilter, buyinFilter]);
 
-  // Derived budget info
   const myTournaments = useMemo(() => {
     return tournaments.filter(t => myListIds.includes(t.id));
   }, [tournaments, myListIds]);
 
   const budgetStats = useMemo(() => {
     let totalBuyIn = 0;
-    let eventCount = myTournaments.length;
-    
     myTournaments.forEach(t => {
       if (t.entryAmount) totalBuyIn += t.entryAmount;
     });
-
-    return { totalBuyIn, eventCount };
+    return { totalBuyIn, eventCount: myTournaments.length };
   }, [myTournaments]);
 
   return {
@@ -99,7 +130,10 @@ export function useTournamentsData() {
     filters: {
       search, setSearch,
       seriesFilter, setSeriesFilter,
-      gameFilter, setGameFilter
+      gameFilter, setGameFilter,
+      buyinFilter, setBuyinFilter,
+      activeFilterCount,
+      clearAllFilters,
     },
     budgetStats
   };
