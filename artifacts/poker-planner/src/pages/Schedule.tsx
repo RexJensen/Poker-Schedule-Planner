@@ -1,12 +1,17 @@
 import { useTournamentsData } from "@/hooks/use-tournaments-data";
 import { FilterBar } from "@/components/FilterBar";
 import { TournamentCard } from "@/components/TournamentCard";
-import { useMemo } from "react";
-import { CalendarX } from "lucide-react";
+import { CalendarView } from "@/components/CalendarView";
+import { useMemo, useState } from "react";
+import { CalendarX, List, CalendarDays } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+type ViewMode = "list" | "calendar";
 
 export default function Schedule() {
   const { tournaments, allTournaments, myListIds, toggleSaved, filters, isLoading } = useTournamentsData();
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   const sortedTournaments = useMemo(() => {
     return [...tournaments].sort((a, b) => {
@@ -32,11 +37,41 @@ export default function Schedule() {
 
       <FilterBar {...filters} />
 
-      {isFiltered && !isLoading && (
-        <div className="text-center py-2 text-xs text-muted-foreground bg-secondary/30 border-b border-border/30">
-          {tournaments.length} of {allTournaments.length} events
+      <div className="flex items-center justify-between max-w-2xl mx-auto w-full px-4 py-2">
+        {isFiltered && !isLoading ? (
+          <span className="text-xs text-muted-foreground">
+            {tournaments.length} of {allTournaments.length} events
+          </span>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center bg-secondary/40 rounded-lg p-0.5 border border-border/30">
+          <button
+            onClick={() => setViewMode("list")}
+            className={cn(
+              "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+              viewMode === "list"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <List className="w-3.5 h-3.5" />
+            List
+          </button>
+          <button
+            onClick={() => setViewMode("calendar")}
+            className={cn(
+              "flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+              viewMode === "calendar"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <CalendarDays className="w-3.5 h-3.5" />
+            Calendar
+          </button>
         </div>
-      )}
+      </div>
 
       <main className="flex-1 max-w-2xl mx-auto w-full">
         {isLoading ? (
@@ -73,6 +108,12 @@ export default function Schedule() {
               </button>
             )}
           </motion.div>
+        ) : viewMode === "calendar" ? (
+          <CalendarView
+            tournaments={sortedTournaments}
+            myListIds={myListIds}
+            onToggleSave={toggleSaved}
+          />
         ) : (
           <div className="bg-card/40">
             {sortedTournaments.map(tournament => (
