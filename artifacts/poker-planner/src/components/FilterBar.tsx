@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { BuyinRange } from "@/hooks/use-tournaments-data";
+import { BUYIN_RANGE_OPTIONS } from "@/hooks/use-tournaments-data";
 
 interface FilterBarProps {
   search: string;
@@ -11,8 +12,8 @@ interface FilterBarProps {
   setSeriesFilter: (v: string) => void;
   gameFilter: string;
   setGameFilter: (v: string) => void;
-  buyinFilter: BuyinRange;
-  setBuyinFilter: (v: BuyinRange) => void;
+  buyinFilters: Set<BuyinRange>;
+  toggleBuyinFilter: (v: BuyinRange) => void;
   activeFilterCount: number;
   clearAllFilters: () => void;
 }
@@ -37,7 +38,7 @@ export function FilterBar({
   search, setSearch,
   seriesFilter, setSeriesFilter,
   gameFilter, setGameFilter,
-  buyinFilter, setBuyinFilter,
+  buyinFilters, toggleBuyinFilter,
   activeFilterCount,
   clearAllFilters,
 }: FilterBarProps) {
@@ -132,11 +133,11 @@ export function FilterBar({
 
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
-                    Buy-in
+                    Buy-in <span className="normal-case tracking-normal font-normal text-muted-foreground/60">(select multiple)</span>
                   </label>
                   <div className="flex flex-wrap gap-1.5">
-                    {(["All", "Under $500", "$500-$1K", "$1K-$5K", "$5K-$10K", "$10K+"] as BuyinRange[]).map(b => (
-                      <FilterChip key={b} label={b} active={buyinFilter === b} onClick={() => setBuyinFilter(b)} />
+                    {BUYIN_RANGE_OPTIONS.map(b => (
+                      <FilterChip key={b} label={b} active={buyinFilters.has(b)} onClick={() => toggleBuyinFilter(b)} />
                     ))}
                   </div>
                 </div>

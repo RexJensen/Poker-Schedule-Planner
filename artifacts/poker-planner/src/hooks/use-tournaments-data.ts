@@ -7,16 +7,17 @@ import {
   getGetMyListQueryKey 
 } from "@workspace/api-client-react";
 
-export type BuyinRange = "All" | "Under $500" | "$500-$1K" | "$1K-$5K" | "$5K-$10K" | "$10K+";
+export type BuyinRange = "Under $500" | "$500-$1K" | "$1K-$5K" | "$5K-$10K" | "$10K+";
 
-const BUYIN_RANGES: Record<BuyinRange, [number | null, number | null]> = {
-  "All": [null, null],
+export const BUYIN_RANGE_BOUNDS: Record<BuyinRange, [number | null, number | null]> = {
   "Under $500": [null, 499],
   "$500-$1K": [500, 1000],
   "$1K-$5K": [1001, 5000],
   "$5K-$10K": [5001, 10000],
   "$10K+": [10001, null],
 };
+
+export const BUYIN_RANGE_OPTIONS: BuyinRange[] = ["Under $500", "$500-$1K", "$1K-$5K", "$5K-$10K", "$10K+"];
 
 export function useTournamentsData() {
   const queryClient = useQueryClient();
@@ -55,20 +56,32 @@ export function useTournamentsData() {
   const [search, setSearch] = useState("");
   const [seriesFilter, setSeriesFilter] = useState<string>("All");
   const [gameFilter, setGameFilter] = useState<string>("All");
-  const [buyinFilter, setBuyinFilter] = useState<BuyinRange>("All");
+  const [buyinFilters, setBuyinFilters] = useState<Set<BuyinRange>>(new Set());
+
+  const toggleBuyinFilter = useCallback((range: BuyinRange) => {
+    setBuyinFilters(prev => {
+      const next = new Set(prev);
+      if (next.has(range)) {
+        next.delete(range);
+      } else {
+        next.add(range);
+      }
+      return next;
+    });
+  }, []);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (seriesFilter !== "All") count++;
     if (gameFilter !== "All") count++;
-    if (buyinFilter !== "All") count++;
+    if (buyinFilters.size > 0) count++;
     return count;
-  }, [seriesFilter, gameFilter, buyinFilter]);
+  }, [seriesFilter, gameFilter, buyinFilters]);
 
   const clearAllFilters = useCallback(() => {
     setSeriesFilter("All");
     setGameFilter("All");
-    setBuyinFilter("All");
+    setBuyinFilters(new Set());
     setSearch("");
   }, []);
 
@@ -88,12 +101,18 @@ export function useTournamentsData() {
         }
       }
 
-      if (buyinFilter !== "All") {
-        const [min, max] = BUYIN_RANGES[buyinFilter];
+      if (buyinFilters.size > 0) {
         const amount = t.entryAmount;
         if (amount == null) return false;
-        if (min !== null && amount < min) return false;
-        if (max !== null && amount > max) return false;
+        let matchesAny = false;
+        for (const range of buyinFilters) {
+          const [min, max] = BUYIN_RANGE_BOUNDS[range];
+          if ((min === null || amount >= min) && (max === null || amount <= max)) {
+            matchesAny = true;
+            break;
+          }
+        }
+        if (!matchesAny) return false;
       }
 
       if (search) {
@@ -106,7 +125,7 @@ export function useTournamentsData() {
 
       return true;
     });
-  }, [tournaments, search, seriesFilter, gameFilter, buyinFilter]);
+  }, [tournaments, search, seriesFilter, gameFilter, buyinFilters]);
 
   const myTournaments = useMemo(() => {
     return tournaments.filter(t => myListIds.includes(t.id));
@@ -131,7 +150,7 @@ export function useTournamentsData() {
       search, setSearch,
       seriesFilter, setSeriesFilter,
       gameFilter, setGameFilter,
-      buyinFilter, setBuyinFilter,
+      buyinFilters, toggleBuyinFilter,
       activeFilterCount,
       clearAllFilters,
     },
